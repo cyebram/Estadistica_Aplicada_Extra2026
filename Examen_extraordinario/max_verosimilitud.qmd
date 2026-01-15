@@ -1,0 +1,42 @@
+---
+title: "Estimación por el Método de Máxima Verosimilitud"
+lang: es
+format:
+  html:
+    toc: false
+    theme: cosmo
+    code-fold: true
+    fig-width: 6
+    fig-height: 4
+    fontsize: 1.1rem
+---
+
+```{=html}
+<style>
+main.content {
+text-align: justify}
+</style>
+```
+
+```{r}
+#| include: false
+
+library(tidyverse)
+library(knitr)
+library(kableExtra)
+library(readxl)
+library(RColorBrewer)
+```
+
+
+Las siguientes distribuciones dependen de dos parámetros: uno desconocido denotado por la letra $\theta$ y otro que supondremos conocido y que se denota por una letra distinta. Encuentra el estimador por el método de máxima verosimilitud para el parámetro desconocido $\theta$, suponiendo un tamaño de muestra $n$. En cada caso genera una muestra de tamaño $1000$ con parámetros conocidos y compara con el valor estimado.
+
+
+a) $bin(k, \theta)$ 
+
+
+b) $gamma(\alpha, \theta)$
+
+
+c) $Weibull(\alpha, \theta)$
+

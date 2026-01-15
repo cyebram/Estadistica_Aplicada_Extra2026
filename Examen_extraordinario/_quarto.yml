@@ -1,0 +1,27 @@
+project:
+  type: book
+
+book:
+  title: "Estadística Aplicada"
+  chapters:
+    - index.qmd
+    - bernoulli_binomial.qmd
+    - gamma.qmd
+    - weibull.qmd
+    - momentos.qmd
+    - max_verosimilitud.qmd
+    - egresos.qmd
+    - auto.qmd
+    
+
+bibliography: references.bib
+
+format:
+  html:
+    theme: cosmo
+    grid:
+      sidebar-width: 250px
+      body-width: 950px
+      margin-width: 250px
+      gutter-width: 1.5rem
+

@@ -1,0 +1,344 @@
+---
+title: "Análisis Estadístico de las Finanzas Públicas Estatales en México: Egresos"
+subtitle: "Estadística de Finanzas Públicas Estatales y Municipales (EFIPEM) 2013-2023"
+lang: es
+format:
+  html:
+    toc: false
+    theme: cosmo
+    code-fold: true
+    fig-width: 8
+    fig-height: 6
+    fig-align: "center"
+    fontsize: 1.1rem
+---
+
+```{=html}
+<style>
+main.content {
+text-align: justify}
+</style>
+```
+
+```{r}
+#| code-fold: true
+#| message: false
+#| warning: false
+
+library(tidyverse)
+library(RColorBrewer)
+library(sf)          # Para datos espaciales
+library(viridis)     # Para paletas de colores
+library(DT)
+library(plotly)
+library(knitr)
+library(kableExtra)
+library(corrplot)
+library(broom)
+library(scales)
+library(multcomp)
+```
+
+
+
+## Marco Conceptual de la EFIPEM
+
+La **Estadística de Finanzas Públicas Estatales y Municipales (EFIPEM)** es un proyecto estadístico del Instituto Nacional de Estadística y Geografía (INEGI) que tiene como objetivo integrar información sobre el origen y aplicación de los recursos financieros de los gobiernos estatales y municipales en México. A continuación se hace una descripción de la estructura de los datos brindada en la [Síntesis metodológica de la estadística de finanzas públicas estatales y municipales](https://www.inegi.org.mx/app/biblioteca/ficha.html?upc=702825085926).
+
+## Estructura de Clasificación de los Datos
+
+La EFIPEM organiza la información financiera siguiendo una estructura jerárquica que permite un análisis detallado y homogéneo de las finanzas públicas:
+
+### Niveles de Agregación
+
+1.  **Tema**: Nivel más agregado que clasifica las operaciones en:
+
+    -   **Ingresos**: Recursos captados por las entidades públicas
+    -   **Egresos**: Recursos aplicados por las entidades públicas
+
+2.  **Capítulo**: Cada tema se divide en 11 capítulos que agrupan operaciones de naturaleza similar
+
+3.  **Concepto**: Subdivisión de los capítulos que especifica el tipo de operación
+
+4.  **Partida**: Nivel de detalle que identifica el objeto específico del ingreso o gasto
+
+5.  **Subpartida**: Mayor nivel de desagregación disponible
+
+
+## Clasificación de Egresos Estatales
+
+
+
+
+## Objetivos del Análisis
+
+El presente estudio tiene como objetivos:
+
+1.  **Analizar la evolución de los egresos estatales** durante el período 2013-2023
+2.  **Identificar patrones y tendencias** en las finanzas públicas estatales
+3.  **Realizar análisis estadísticos descriptivos**
+4.  **Aplicar pruebas de hipótesis** para evaluar diferencias significativas entre estados y años
+5.  **Proporcionar hallazgos** sobre la gestión financiera estatal en México
+
+## Cargar datos
+
+Consideramos los datos de finanzas públicas de los estados de México, disponibles en varios archivos CSV dentro de la carpeta "conjunto_de_datos". No se consideran los valores de la Ciudad de México.
+
+```{r}
+#| code-fold: true
+#| message: false
+#| warning: false
+
+
+# Se identifican los archivos CSV en el directorio especificado
+data_sets <- list.files("./conjunto_de_datos", pattern = "*.csv", full.names = TRUE)
+
+# Se leen y combinan los archivos CSV en un solo data frame
+datos <- data_sets |> 
+  set_names(nm = data_sets) |> 
+  map_dfr(read_csv, .id = "source_file")
+
+# Convertir variables de tipo character a factor
+datos_factor <- datos |> 
+  dplyr::select(where(is.character)) |> 
+  names()
+
+datos <- datos |> 
+  mutate(across(all_of(datos_factor), as_factor))
+
+# Crear variables adicionales
+datos <- datos |> mutate(ANIO_factor = as_factor(ANIO), VALOR_millones = VALOR / 1e6)
+datos <- datos |> rename(CVE_ENT = ID_ENTIDAD)
+
+# Cargar datos de estados y unir con el conjunto de datos principal
+datos_estado <- read_csv("./datos/tc_entidad.csv")
+datos_estado <- datos_estado |> mutate(across(everything(), as_factor))
+datos_estado$ZONA <- factor(datos_estado$ZONA, levels = c("NORTE", "CENTRO", "SUR"))
+
+datos <- left_join(datos, datos_estado)
+
+# Eliminar columnas no necesarias
+datos <- datos |> dplyr::select(-source_file, -PROD_EST, -COBERTURA, -ESTATUS) 
+
+#glimpse(datos)
+
+nacional_estado <- st_read("data_nacional/00ent.shp", options = "ENCODING=LATIN1", quiet = TRUE)
+nacional_estado <- left_join(nacional_estado, datos_estado, by = "CVE_ENT")
+
+cat("Años disponibles:", paste(unique(datos$ANIO_factor), collapse = ", "), "\n")
+cat("Entidades incluidas:", length(unique(datos$CVE_ENT)), "\n")
+cat("Temas:", paste(unique(datos$TEMA), collapse = ", "), "\n")
+cat("Categorías:", paste(unique(datos$CATEGORIA), collapse = ", "), "\n\n")
+
+```
+
+
+## Análisis Exploratorio de Datos: Egresos Nivel Capítulo
+
+### Estructura General de los Egresos
+
+-   Dataset `egresos`: Filtrado para el tema "Egresos" y categoría "Capítulo". Se agrega porcentaje anual de cada capítulo.
+-   Dataset `egresos_agregados`: Agregado por año, estado y categoría principal con cálculos de porcentaje anual.
+-   Dataset `egresos_wide`: Transformado a formato ancho con valores y porcentajes por categoría principal.
+
+
+```{r}
+#| code-fold: true
+
+egresos <- datos |> filter(TEMA == "Egresos", CATEGORIA == "Capítulo")
+
+# Agregar porcentaje anual al dataset original
+egresos <- egresos |> 
+  group_by(ANIO, CVE_ENT, NOM_ENT) |> 
+  mutate(
+    total_estado_anio = sum(VALOR_millones, na.rm = TRUE),
+    porcentaje_anual = (VALOR_millones / total_estado_anio) * 100
+  ) |> 
+  ungroup()
+
+
+# Definir niveles de categoría para egresos
+niveles_categoria_egresos <- c("Servicios personales", "Materiales y suministros", 
+                               "Servicios generales", "Transferencias, asignaciones, subsidios y otras ayudas",
+                               "Bienes muebles, inmuebles e intangibles", "Inversión pública",
+                               "Inversiones financieras y otras provisiones", "Recursos asignados a municipios",
+                               "Otros egresos", "Deuda pública", "Disponibilidad final")
+
+egresos$DESCRIPCION_CATEGORIA <- factor(egresos$DESCRIPCION_CATEGORIA, 
+                                       levels = niveles_categoria_egresos)
+
+# Agregar columna de categorías principales para egresos
+egresos <- egresos |> 
+  mutate(
+    CATEGORIA_PRINCIPAL = case_when(
+      # Gastos Corrientes
+      DESCRIPCION_CATEGORIA %in% c("Servicios personales", "Materiales y suministros", 
+                                  "Servicios generales") ~ "Gastos Corrientes",
+      
+      # Transferencias y Asignaciones
+      DESCRIPCION_CATEGORIA %in% c("Transferencias, asignaciones, subsidios y otras ayudas",
+                                  "Recursos asignados a municipios") ~ "Transferencias y Asignaciones",
+      
+      # Inversión y Desarrollo
+      DESCRIPCION_CATEGORIA %in% c("Inversión pública", 
+                                  "Bienes muebles, inmuebles e intangibles") ~ "Inversión y Desarrollo",
+      
+      # Obligaciones Financieras
+      DESCRIPCION_CATEGORIA %in% c("Deuda pública", 
+                                  "Inversiones financieras y otras provisiones") ~ "Obligaciones Financieras",
+      
+      # Otros Egresos
+      DESCRIPCION_CATEGORIA %in% c("Otros egresos", "Disponibilidad final") ~ "Otros Egresos"
+    ),
+    
+    # Convertir a factor con orden específico
+    CATEGORIA_PRINCIPAL = factor(CATEGORIA_PRINCIPAL, 
+                                levels = c("Gastos Corrientes", "Transferencias y Asignaciones",
+                                          "Inversión y Desarrollo", "Obligaciones Financieras", 
+                                          "Otros Egresos"))
+  )
+
+
+
+
+# Agregar datos por ANIO, Estado y CATEGORIA_PRINCIPAL con porcentajes
+egresos_agregados <- egresos |> 
+  group_by(ANIO, CVE_ENT, NOM_ENT, ABR_ENT, ZONA, CATEGORIA_PRINCIPAL, ANIO_factor) |> 
+  summarise(
+    VALOR = sum(VALOR, na.rm = TRUE),
+    VALOR_millones = sum(VALOR_millones, na.rm = TRUE),
+    .groups = "drop"
+  ) |> 
+  # Calcular porcentaje por estado y año
+  group_by(ANIO, CVE_ENT, NOM_ENT) |> 
+  mutate(
+    total_estado_anio = sum(VALOR_millones, na.rm = TRUE),
+    porcentaje_anual = (VALOR_millones / total_estado_anio) * 100
+  ) |> 
+  ungroup() |> 
+  # Reordenar columnas para mantener estructura similar
+  dplyr::select(
+    ANIO,
+    CVE_ENT, 
+    VALOR,
+    ANIO_factor,
+    VALOR_millones,
+    porcentaje_anual,
+    NOM_ENT,
+    ABR_ENT,
+    ZONA,
+    CATEGORIA_PRINCIPAL
+  )
+
+
+# Transformar a formato ancho con valor y porcentaje por categoría
+egresos_wide <- egresos_agregados |> 
+  dplyr::select(ANIO, CVE_ENT, ANIO_factor, NOM_ENT, ABR_ENT, ZONA, 
+         CATEGORIA_PRINCIPAL, VALOR_millones, porcentaje_anual) |> 
+  pivot_wider(
+    names_from = CATEGORIA_PRINCIPAL,
+    values_from = c(VALOR_millones, porcentaje_anual),
+    names_sep = "_"
+  ) |> 
+  rename_with(
+    ~ case_when(
+      .x == "VALOR_millones_Gastos Corrientes" ~ "Gastos_Corrientes_valor",
+      .x == "porcentaje_anual_Gastos Corrientes" ~ "Gastos_Corrientes_porcentaje",
+      .x == "VALOR_millones_Transferencias y Asignaciones" ~ "Transferencias_Asignaciones_valor",
+      .x == "porcentaje_anual_Transferencias y Asignaciones" ~ "Transferencias_Asignaciones_porcentaje",
+      .x == "VALOR_millones_Inversión y Desarrollo" ~ "Inversion_Desarrollo_valor",
+      .x == "porcentaje_anual_Inversión y Desarrollo" ~ "Inversion_Desarrollo_porcentaje",
+      .x == "VALOR_millones_Obligaciones Financieras" ~ "Obligaciones_Financieras_valor",
+      .x == "porcentaje_anual_Obligaciones Financieras" ~ "Obligaciones_Financieras_porcentaje",
+      .x == "VALOR_millones_Otros Egresos" ~ "Otros_Egresos_valor",
+      .x == "porcentaje_anual_Otros Egresos" ~ "Otros_Egresos_porcentaje",
+      TRUE ~ .x
+    )
+  ) |> 
+  # Reemplazar NA con 0 donde sea apropiado
+  mutate(
+    across(contains("_valor"), ~ replace_na(.x, 0)),
+    across(contains("_porcentaje"), ~ replace_na(.x, 0))
+  ) |> 
+  # Reordenar columnas
+  dplyr::select(
+    ANIO, CVE_ENT, ANIO_factor, NOM_ENT, ABR_ENT, ZONA,
+    Gastos_Corrientes_valor, Gastos_Corrientes_porcentaje,
+    Transferencias_Asignaciones_valor, Transferencias_Asignaciones_porcentaje,
+    Inversion_Desarrollo_valor, Inversion_Desarrollo_porcentaje,
+    Obligaciones_Financieras_valor, Obligaciones_Financieras_porcentaje,
+    Otros_Egresos_valor, Otros_Egresos_porcentaje
+  )
+
+cat("Capítulos presentes: ", paste(levels(egresos$DESCRIPCION_CATEGORIA), collapse = ", \n"))
+
+# Tabla resumen
+resumen_estructura <- egresos |> group_by(TEMA, CATEGORIA, ABR_ENT) |> 
+  summarise(
+    registros = n(),
+    valor_total = sum(VALOR, na.rm = TRUE)/ 1e9,  # En miles de millones
+    .groups = "drop"
+  ) |> 
+  arrange(TEMA, CATEGORIA, ABR_ENT)
+
+kable(resumen_estructura, 
+      col.names = c("Tema", "Categoría", "Entidad", "Registros", "Total (Miles Mill. MXN)"),
+      digits = 2,
+      caption = "Estructura General de Egresos EFIPEM 2014-2023") %>%
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed"))
+
+
+```
+
+## Mapas de Egresos Totales por Estado
+
+```{r}
+#| code-fold: true
+
+agregado_mapa_egresos <- resumen_estructura |> 
+  dplyr::select(ABR_ENT, valor_total)
+agregado_mapa_egresos <- left_join(nacional_estado, agregado_mapa_egresos, by = "ABR_ENT")
+
+mapa_egresos <- ggplot(agregado_mapa_egresos) +
+  geom_sf(aes(fill = valor_total), color = "gray50", size = 0.5) +
+  labs(
+    title = "Egresos totales por estado (2013-2023)",
+    subtitle = "Valores en miles de millones de MXN",
+    caption = "Fuente: INEGI - Finanzas Públicas",
+    fill = "Egresos Totales"
+  ) +
+  scale_fill_viridis_c(labels = comma) +
+  theme_void() +
+  theme(
+    plot.title = element_text(size = 16, face = "bold"),
+    plot.subtitle = element_text(size = 12),
+    plot.caption = element_text(size = 10)
+  )
+
+print(mapa_egresos)
+```
+
+Sin el Estado de México para una mejor visualización:
+
+```{r}
+#| code-fold: true
+
+mapa_egresos_sin_mex <- ggplot(agregado_mapa_egresos |> filter(ABR_ENT != "MEX")) +
+  geom_sf(aes(fill = valor_total), color = "gray50", size = 0.5) +
+  labs(
+    title = "Egresos totales por estado (2013-2023)",
+    subtitle = "Valores en miles de millones de MXN (sin Estado de México)",
+    caption = "Fuente: INEGI - Finanzas Públicas",
+    fill = "Egresos Totales"
+  ) +
+  scale_fill_viridis_c(labels = comma) +
+  theme_void() +
+  theme(
+    plot.title = element_text(size = 16, face = "bold"),
+    plot.subtitle = element_text(size = 12),
+    plot.caption = element_text(size = 10)
+  )
+
+print(mapa_egresos_sin_mex)
+```
+

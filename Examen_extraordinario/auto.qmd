@@ -1,0 +1,96 @@
+---
+title: "Análisis Estadístico: Auto"
+lang: es
+format:
+  html:
+    toc: false
+    theme: cosmo
+    code-fold: true
+    fig-width: 8
+    fig-height: 6
+    fig-align: "center"
+    fontsize: 1.1rem
+---
+
+```{=html}
+<style>
+main.content {
+text-align: justify}
+</style>
+```
+
+```{r}
+#| code-fold: true
+#| message: false
+#| warning: false
+
+library(tidyverse)
+library(RColorBrewer)
+library(sf)          # Para datos espaciales
+library(viridis)     # Para paletas de colores
+library(DT)
+library(plotly)
+library(knitr)
+library(kableExtra)
+library(corrplot)
+library(broom)
+library(scales)
+library(multcomp)
+library(ISLR2)
+```
+
+
+
+En esta sección, realizaremos un análisis estadístico detallado de un conjunto de datos relacionado con automóviles. El objetivo es explorar las relaciones entre diferentes variables, identificar patrones y tendencias, y extraer conclusiones significativas. El conjunto de datos que utilizaremos es "Auto" del paquete ISLR2, que contiene información sobre diversas características de automóviles, como el rendimiento de combustible, el peso, la aceleración y el año de fabricación. Contiene las siguientes variables y se incluye también el tipo de cada una:
+
+* `mpg`: Millas por galón (numérica)
+* `cylinders`: Número de cilindros (categórica)
+* `displacement`: Desplazamiento del motor en pulgadas cúbicas (numérica)
+* `horsepower`: Potencia del motor en caballos de fuerza (numérica)
+* `weight`: Peso del automóvil en libras (numérica)
+* `acceleration`: Aceleración, tiempo para alcanzar 60 mph desde reposo, en segundos (numérica)
+* `year`: Año de fabricación (categórica)
+* `origin`: Origen del automóvil, 1: EE.UU., 2: Europa, 3: Japón (categórica)
+* `name`: Nombre del automóvil (categórica)
+
+```{r}
+#| code-fold: true
+# Cargar el conjunto de datos Auto
+data("Auto", package = "ISLR2")
+
+glimpse(Auto)
+```
+
+Notemos que algunas variables no corresponden al tipo que se indicó previamente, hagamos los ajustes necesarios:
+
+```{r}
+#| code-fold: true
+
+# Convertir variables a los tipos adecuados
+Auto <- Auto |> 
+  mutate(
+    cylinders = as.factor(cylinders),
+    year = as.factor(year),
+    origin = as.factor(origin)
+  )
+
+glimpse(Auto)
+```
+
+Ahora que hemos preparado los datos, podemos comenzar nuestro análisis estadístico exploratorio. 
+
+## Análisis Exploratorio de Datos (EDA)
+
+## Correlación entre Variables Numéricas
+
+## Pruebas de Hipótesis: Distribuciones de variables numéricas
+
+## ANOVA's
+
+
+
+
+
+
+
+

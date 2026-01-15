@@ -1,0 +1,45 @@
+---
+lang: es
+---
+
+# Contenido {.unnumbered}
+
+```{=html}
+<style>
+main.content {
+text-align: justify}
+</style>
+```
+
+Examen extraordinario en el periodo de enero del 2026 de la asignatura **Estadística Aplicada** del plan de estudios de la Licenciatura en Economía Industrial de la Escuela Nacional de Estudios Superiores UNAM, Unidad León.
+
+El examen consiste en resolver los ejercicios y completar cada una de las secciones que se presentan a continuación. Cada sección aborda un tema específico de estadística aplicada, y se espera que el estudiante demuestre su comprensión y habilidades en el análisis estadístico.
+
+Inicalmente es necesario revisar algunas variables aleatorias y sus distribuciones de probabilidad, esto se desarrolla en las siguientes secciones:
+
+1. Distribuciones Bernoulli y Binomial
+2. Distribución Gamma
+3. Distribución Weibull
+
+En conjunto estas tres secciones tienen un valor total de 1 punto.
+
+Posteriormente se brindan ejercicios de estimación por los métodos de momentos y máxima verosimilitud.
+
+4. Estimación por el método de momentos (2 puntos)
+5. Estimación por el método de máxima verosimilitud (2 puntos)
+
+Finalmente, se presentan dos secciones con casos prácticos de análisis estadístico.
+
+6. Análisis Estadístico de la Finanzas Públicas Estatales en México: Egresos (3 puntos)
+7. Análisis Estadístico: Auto (2 puntos)
+
+La fecha de entrega es el domingo 18 de enero del 2026 antes de las 20 horas. Si algún archivo qmd presenta errores y no se puede generar el documento HTML, se considerará como no entregado.
+
+## Bibliografía
+
+1.  **Montgomery, R.** *Probabilidad y Estadística Aplicadas a la Ingeniería*, México, McGraw-Hill, 2000
+2.  **Rincón, L.** *Estadística Descriptiva* Las Prensas de Ciencias, Fac. de Ciencias UNAM, 2017
+3.  **Rincón, L.** *Introducción a la Probabilidad* Las Prensas de Ciencias, Fac. de Ciencias UNAM, 2014
+4.  **Rincón, L.** *Introducción a la Estadística Inferencial*, Las Prensas de Ciencias, Fac. de Ciencias UNAM, 2019
+5.  **Montgomery, R.** *Design and Analysis of Experiments*, 5th edition, USA, Limusa, 2001
+6.  **Rincón, L.** *Una Introducción a las Series de Tiempo*, Las Prensas de Ciencias, Fac. de Ciencias UNAM, 2019

@@ -1,0 +1,33 @@
+---
+title: "Distribución Weibull"
+lang: es
+---
+
+```{=html}
+<style>
+main.content {
+text-align: justify}
+</style>
+```
+
+```{r}
+#| label: setup
+#| include: false
+
+library(ggplot2)
+library(dplyr)
+library(gridExtra)
+library(knitr)
+library(kableExtra)
+library(RColorBrewer)
+library(plotly)
+```
+
+
+## Definición
+
+## Propiedades de la Función de Densidad
+
+## Función de Densidad de Probabilidad (PDF)
+
+## Medidas Descriptivas
